@@ -129,6 +129,14 @@ dmypy.json
 .pyre/
 
 # IntelliJ
+<<<<<<< HEAD
+.idea
+.idea/
+
+# MAC stuff
+.DS_store
+
+=======
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
@@ -315,3 +323,4 @@ fabric.properties
 
 # idea folder, uncomment if you don't need it
 # .idea
+>>>>>>> 5cc528eaf6de044b73d7ebddce358b451baa0dde
