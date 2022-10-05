@@ -94,7 +94,10 @@ def self(request,id):
 
             custom_user = User.objects.get(username=request.user.username)
             fetched_user = AccountCustom.objects.get(id=id)
-            #if not fetched_user.verified:
+            print(custom_user)
+            print(fetched_user.password)
+            print(custom_user.password)
+            #if fetched_user.password != custom_user.password:
             #    return JsonResponse("Unauthorized", status=status.HTTP_401_UNAUTHORIZED, safe=False)
             return Response({"id": fetched_user.id,
                              "first_name": fetched_user.first_name,
