@@ -20,7 +20,7 @@
 ##### Copy the localhost IP and paste it in POSTMAN 
 ##### Change the method to GET and click send
 ##### Would respond with status code 200 
-#### Added workflow
+#### Added workflow, added Git branch protection
 ##### End.
 
 
