@@ -1,0 +1,14 @@
+asgiref==3.5.2
+attrs==22.1.0
+bcrypt==4.0.0
+decorator==5.1.1
+Django==4.1.1
+djangorestframework==3.13.1
+jsonschema==4.16.0
+mysqlclient==2.1.1
+protobuf==4.21.7
+psycopg2==2.9.3
+pyrsistent==0.18.1
+pytz==2022.2.1
+sqlparse==0.4.2
+validators==0.20.0
