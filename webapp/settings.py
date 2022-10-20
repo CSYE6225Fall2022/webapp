@@ -9,7 +9,11 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import environ
 
+env = environ.Env()
+# reading .env file
+environ.Env.read_env()
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,7 +28,7 @@ SECRET_KEY = 'django-insecure-3d0-q3!00=+vf@0=$7*3w0mzkq6uts3$_7($#t%&1pf&xhvg2y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 #AUTH_USER_MODEL = 'accounts.AccountCustom'
 
 # Application definition
@@ -88,11 +92,11 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgres',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
-        'USER': 'jayanthadithya',
-        'PASSWORD': '',
+        'NAME': env("DATABASE_NAME"),
+        'HOST': env("DATABASE_HOST"),
+        'PORT': env("DATABASE_PORT"),
+        'USER': env("DATABASE_USER"),
+        'PASSWORD': env("DATABASE_PASSWORD"),
     }
 }
 # }

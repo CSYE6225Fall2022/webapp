@@ -4,9 +4,12 @@ from django.db import models
 from django.utils import timezone
 #from django.contrib.auth.models import AbstractUser
 
+#def generate_uuid():
+#  return uuid.uuid4().hex
+
 # Create your models here.
 class AccountCustom(models.Model):
-    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4(),editable=False,unique=True)
     first_name = models.CharField(max_length=25)
     last_name = models.CharField(max_length=100)
     password = models.CharField(max_length=150)

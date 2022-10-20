@@ -21,6 +21,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        export READ_DOT_ENV_FILE=True
     - name: Run Tests
       run: |
         python manage.py test
