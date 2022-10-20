@@ -4,17 +4,20 @@
 #aws_region = "us-east-1"
 #}
 
-variable "aws_region"{
-  type = string
-  default = "us-east-1" }
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
+}
 
-variable "aws_access_key"{
-  type = string
-  default = "" }
+variable "aws_access_key" {
+  type    = string
+  default = ""
+}
 
-variable "aws_secret_key"{
-  type = string
-  default = "" }
+variable "aws_secret_key" {
+  type    = string
+  default = ""
+}
 
 
 source "amazon-ebs" "my_ubuntu_ami" {
@@ -26,7 +29,7 @@ source "amazon-ebs" "my_ubuntu_ami" {
   instance_type   = "t2.micro"
   source_ami      = "ami-08c40ec9ead489470"
   ami_users       = ["155671310944", "094363902806"]
-  profile = "dev"
+  profile         = "dev"
 
   ssh_username = "ubuntu"
   launch_block_device_mappings {
@@ -56,7 +59,7 @@ build {
       "echo '############################################## inline script started##########################################################'",
       "sudo apt-get -y update",
       "echo '############################################## upgrade completed ##########################################################'",
-      "sudo apt-get install build-essential -y" ,
+      "sudo apt-get install build-essential -y",
       "echo '############################################## installed build essentials ##########################################################'",
       "sudo apt install openssl  libpq-dev libffi-dev bzip2 wget -y",
       "sudo apt install software-properties-common -y",
@@ -91,10 +94,10 @@ build {
       "CHECKPOINT_DISABLE=1"
     ]
     inline = [
-#      "sleep 10",
-        "sudo apt-get install python3-pip -y",
+      #      "sleep 10",
+      "sudo apt-get install python3-pip -y",
       "sudo pip install -r requirements.txt",
-       "sudo pip install uwsgi",
+      "sudo pip install uwsgi",
 
       "sudo python3 manage.py makemigrations",
       "sudo python3 manage.py migrate",
@@ -105,7 +108,7 @@ build {
       "sudo systemctl --system enable webapp.service",
       "sudo systemctl start webapp.service",
       "echo deployment complete",
-#      "sudo systemctl daemon-reload",
+      #      "sudo systemctl daemon-reload",
       "sudo lsof -PiTCP -sTCP:LISTEN"
 
     ]
