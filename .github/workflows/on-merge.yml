@@ -1,0 +1,50 @@
+name: WebServer CI
+
+env:
+  AWS_REGION: us-east-1
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: on-merge
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Dependencies
+      run: |
+        sudo python3 -m pip install --upgrade pip
+        sudo pip install -r requirements.txt
+
+    - name: Run Tests
+      run: |
+        sudo python3 manage.py test
+
+    - name: Create Release Folder
+      run: zip -r release.zip . -x ".git/*" ".github/*" ".idea/*"
+    - name: Switch to Release Folder
+      run: |
+        ls -la
+
+      shell: bash
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+        aws-region: ${{env.AWS_REGION}}
+
+    - name: Run packer script file
+      run: |
+        ls -ltr
+        pwd
+        packer build ami.pkr.hcl
