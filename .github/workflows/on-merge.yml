@@ -24,7 +24,6 @@ jobs:
       run: |
         sudo python3 -m pip install --upgrade pip
         sudo pip install -r requirements.txt
-        export READ_DOT_ENV_FILE=True
 
     - name: Run Tests
       run: |
@@ -48,4 +47,5 @@ jobs:
       run: |
         ls -ltr
         pwd
+        env
         packer build ami.pkr.hcl
