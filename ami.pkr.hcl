@@ -1,13 +1,15 @@
-//variables{
-//aws_access_key = "AKIASIPV3WJQG6ISHYI6"
-//aws_secret_key = "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"
-//aws_region = "us-east-1"
-//}
+variables{
+aws_access_key = ""
+aws_secret_key = ""
+aws_region = "us-east-1"
+}
+
+
 
 source "amazon-ebs" "my_ubuntu_ami" {
-  access_key      = "AKIASIPV3WJQG6ISHYI6"
-  secret_key      = "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"
-  region          = "us-east-1"
+  access_key      = "$(var.aws_access_key)"
+  secret_key      = "$(var.aws_secret_key)"
+  region          = "$(var.aws_region)"
   ami_name        = "custom-ami_${formatdate("YYYY_MM_DD_hh_mm_ss", timestamp())}"
   ami_description = "AMI for CSYE 6225"
   instance_type   = "t2.micro"
