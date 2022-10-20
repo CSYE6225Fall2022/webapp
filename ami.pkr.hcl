@@ -1,9 +1,20 @@
-variables{
-aws_access_key = ""
-aws_secret_key = ""
-aws_region = "us-east-1"
-}
+#variables{
+#aws_access_key = ""
+#aws_secret_key = ""
+#aws_region = "us-east-1"
+#}
 
+variable "aws_region"{
+  type = string
+  default = "us-east-1" }
+
+variable "aws_access_key"{
+  type = string
+  default = "" }
+
+variable "aws_secret_key"{
+  type = string
+  default = "" }
 
 
 source "amazon-ebs" "my_ubuntu_ami" {
