@@ -49,5 +49,6 @@ jobs:
         ls -ltr
         pwd
         env
+        packer validate .
         packer build ami.pkr.hcl
       shell: bash
