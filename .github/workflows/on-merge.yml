@@ -2,6 +2,7 @@ name: WebServer CI
 
 env:
   AWS_REGION: us-east-1
+
 on:
   push:
     branches: [ main ]
@@ -36,11 +37,10 @@ jobs:
       run: |
         ls -la
       shell: bash
-
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV}}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
         aws-region: ${{env.AWS_REGION}}
 
