@@ -9,7 +9,7 @@ from django.utils import timezone
 
 # Create your models here.
 class AccountCustom(models.Model):
-    id = models.UUIDField(primary_key=True,default=uuid.uuid4(),editable=False,unique=True)
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,unique=True)
     first_name = models.CharField(max_length=25)
     last_name = models.CharField(max_length=100)
     password = models.CharField(max_length=150)
