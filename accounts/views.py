@@ -1,4 +1,5 @@
 import json
+import os
 
 import bcrypt
 # Create your views here.
@@ -8,9 +9,9 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import parser_classes
 from django.shortcuts import get_object_or_404
 
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, QueryDict
 from django.utils import timezone
-from rest_framework.parsers import JSONParser, FileUploadParser
+from rest_framework.parsers import JSONParser, FileUploadParser,MultiPartParser
 from django.views.decorators.csrf import csrf_exempt
 from jsonschema import validate
 from rest_framework import status, views
@@ -23,6 +24,9 @@ from rest_framework.status import (
 )
 import boto3
 from rest_framework.views import APIView
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 
 from .models import AccountCustom, DocCustom
@@ -157,86 +161,12 @@ def self(request,id):
             return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
 
 
-#class ImageUploadParser(FileUploadParser):
-#    media_type = 'image/*'
-@authentication_classes([BasicAuthentication])
-@permission_classes([IsAuthenticated])
-@csrf_exempt
-@api_view(["GET", "POST"])
-@parser_classes([FileUploadParser])
-def docs(request):
-    if request.method == 'GET':
-        fetched_user = User.objects.get(username=request.user.username)
-        try:
-            all_docs = DocCustom.objects.filter(user_id=fetched_user.id)
-            # return Response({"doc_id": pic_user.id,
-            #                 "name": pic_user.name,
-            #                 "s3_bucket_path": pic_user.s3_bucket_path,
-            #                 "date_created": pic_user.date_created,
-            #                 "user_id": pic_user.user_id},
-            #                 status=HTTP_200_OK)
-            return all_docs
-        except BaseException as err:
-            return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
-    elif request.method == 'POST':
-        fetched_user = AccountCustom.objects.get(username=request.user.username)
-        file = request.data.get('file')
-        print(file)
-        f = base64.b64encode(file.read()).decode('utf-8')#open(file, 'rb')#base64.b64encode(file.read())#.decode('utf-8')
-        #print(type(f))# open(file,'rb')
-        # obj.put('body': File.open(file, 'rb'))
-        try:
-            response = client.put_object(
-                Bucket='jay11awsbucket',
-                Body=f,
-                Key=str(fetched_user.id) + '/' + file.name
-            )
-            piccustom = DocCustom(
-                name=file.name,
-                s3_bucket_path='jay11awsbucket' +'/' + str(fetched_user.id) + '/' + file.name,
-                date_created=timezone.now(),
-                user_id=fetched_user.id,
-            )
-            piccustom.save()
-            print(response)
-            return JsonResponse(
-                {
-                    "doc_id": piccustom.doc_id,
-                    "user_id": fetched_user.id,
-                    "name": piccustom.name,
-                    "s3_bucket_path": piccustom.s3_bucket_path,
-                    "date_created": piccustom.date_created,
-                }, safe=False, status=201)
-        except BaseException as err:
-            return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
 
-# @authentication_classes([BasicAuthentication])
-# @permission_classes([IsAuthenticated])
-# @csrf_exempt
-# @api_view(["GET", "DELETE"])
-# def doc(request,docu_id):
-#     if request.method == 'GET':
-#         custom_user = User.objects.get(username=request.user.username)
-#         #account_user = DocCustom.objects.get(id=docu_id)
-#
-#         #if str(custom_user) != str(fetched_user.username):
-#         #    return JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN,
-#         #                        safe=False)
-#         fetched_user = DocCustom.objects.get(doc_id=docu_id)
-#         try:
-#             pic_user = DocCustom.objects.get(doc_id=docu_id)
-#             return Response({"id": pic_user.id,
-#                              "file_name": pic_user.file_name,
-#                              "url": pic_user.url,
-#                              "upload_date": pic_user.upload_date,
-#                              "user_id": pic_user.user_id},
-#                             status=HTTP_200_OK)
-#         except BaseException as err:
-#             return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
 
 class FileUploadView(views.APIView):
-    parser_classes = [FileUploadParser]
-
+    parser_classes = (MultiPartParser,)
+    authentication_classes = [BasicAuthentication]
+    #permission_classes = [IsAuthenticated]
     # def post(self, request, filename, format=None):
     #     file_obj = request.data['file']
     #     # ...
@@ -244,32 +174,56 @@ class FileUploadView(views.APIView):
     #     # ...
     #     return Response(status=204)
 
-    def post(self,request,filename,format=None):
-        #if request.method == 'POST':
-        fetched_user = AccountCustom.objects.get(username=request.user.username)
-        file = request.data['file']
+    def post(self,request,format=None):
+        if request.method == 'POST':
+            fetched_user = AccountCustom.objects.get(username=request.user.username)
+            print(request.data)
+            file = request.data.get('file')
         #print(file)
-        f = base64.b64encode(file.read()).decode('utf-8')  # open(file, 'rb')#base64.b64encode(file.read())#.decode('utf-8')
+            f = file.read()#base64.b64encode(file.read()).decode('utf-8')  # open(file, 'rb')#base64.b64encode(file.read())#.decode('utf-8')
             # print(type(f))# open(file,'rb')
             # obj.put('body': File.open(file, 'rb'))
         #return Response(status=204)
-        #try:
-        response = client.put_object(
-                 Bucket='jay11awsbucket',
-                 Body=f,
-                 Key=str(fetched_user.id) + '/' + file.name
-                )
+            try:
+                #assert isinstance(file.name, object)
+                response = client.put_object(
+                            Bucket=os.environ['awss3bucket'],
+                            Body=f,
+                            Key=str(fetched_user.id) + '/' + file.name
+                            )
         #return JsonResponse({response})
+                check_files = DocCustom.objects.filter(user_id= fetched_user.id).values()
+                for key in check_files:
+                    #print(key.values_list('name'))
+                    #for q in key.items():
+                    #    print(q.name)
+                    print(key['name'])
+                    #q = QueryDict(key)
+                    #for key1 in key.values():
+                    #    print(key1)
+                    #print(q)
+                    print(file.name)
 
-        piccustom = DocCustom(
-                 name=file.name,
-                s3_bucket_path='jay11awsbucket' + '/' + str(fetched_user.id) + '/' + file.name,
-                date_created=timezone.now(),
-                user_id=fetched_user.id,
-            )
-        piccustom.save()
-            #print(response)
-        return JsonResponse(
+                    if key['name'] == file.name:
+                        print("Oh no")
+                        pic_user = DocCustom.objects.get(doc_id=key['doc_id'])
+                        pic_user.delete()
+
+                piccustom = DocCustom(
+                    name=file.name,
+                    s3_bucket_path=os.environ['awss3bucket'] + '/' + str(fetched_user.id) + '/' + file.name,
+                    date_created=timezone.now(),
+                    user_id=fetched_user.id,
+                )
+                # check_files = DocCustom.objects.get(user_id=fetched_user.id,name = file.)
+                # if check_files.name == file.name:
+                #     print("Oh no")
+                #     pic_user = DocCustom.objects.get(name=str(file.name))
+                #     print("File already present overwriting it")
+                #     pic_user.delete()
+                piccustom.save()
+                # print(response)
+                return JsonResponse(
                     {
                         "doc_id": piccustom.doc_id,
                         "user_id": fetched_user.id,
@@ -277,8 +231,98 @@ class FileUploadView(views.APIView):
                         "s3_bucket_path": piccustom.s3_bucket_path,
                         "date_created": piccustom.date_created,
                     }, safe=False, status=201)
-       # except BaseException as err:
-        #     return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
+
+            except BaseException as err:
+                return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
+    def get(self,request,format=None):
+        if request.method == 'GET':
+            fetched_user = User.objects.get(username=request.user.username)
+            mapped_user = AccountCustom.objects.get(username=str(fetched_user))
+
+            try:
+                print(mapped_user)
+
+                all_docs = DocCustom.objects.filter(user_id=mapped_user.id).values()
+                #if all_docs == None:
+
+                # return Response({"doc_id": pic_user.id,
+                #                 "name": pic_user.name,
+                #                 "s3_bucket_path": pic_user.s3_bucket_path,
+                #                 "date_created": pic_user.date_created,
+                #                 "user_id": pic_user.user_id},
+                #                 status=HTTP_200_OK)
+                return Response(all_docs,status=HTTP_200_OK)
+            except BaseException as err:
+                return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
+
+class Myendpointview(views.APIView):
+    #authentication_classes = [BasicAuthentication]
+    #permission_classes = [IsAuthenticated]
+    def get(self,request,*args,**kwargs):
+        if request.method == 'GET':
+
+            #return Response(status=HTTP_200_OK)
+            #print(docu_id)
+            id = kwargs.get('id')
+            print(id)
+            try:
+                fetched_user_id = DocCustom.objects.get(doc_id=id)
+            except DocCustom.DoesNotExist:
+                return Response('Document no  longer present ', status=status.HTTP_404_NOT_FOUND)
+
+            #if  not fetched_user_id:
+
+            custom_user = User.objects.get(username=request.user.username)
+            mapped_user = AccountCustom.objects.get(id=fetched_user_id.user_id)
+            if str(custom_user) != str(mapped_user.username):
+                return JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN,
+                                    safe=False)
+            #account_user = DocCustom.objects.get(doc_id=docu_id)
+
+            #if str(custom_user) != str(fetched_user.username):
+            #    return JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN,
+            #                        safe=False)
+
+            print(fetched_user_id)
+            try:
+                pic_user = DocCustom.objects.get(doc_id=fetched_user_id.doc_id)
+                return Response({"id": pic_user.doc_id,
+                                 "file_name": pic_user.name,
+                                 "url": pic_user.s3_bucket_path,
+                                 "upload_date": pic_user.date_created,
+                                 "user_id": pic_user.user_id},
+                                status=HTTP_200_OK)
+            except BaseException as err:
+                return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
+
+    def delete(self,request,*args,**kwargs):
+        if request.method == "DELETE":
+            #fetched_user = AccountCustom.objects.get(username=request.user.username)
+            id = kwargs.get('id')
+            try:
+                fetched_user_id = DocCustom.objects.get(doc_id=id)
+            except DocCustom.DoesNotExist:
+                return Response('Document no  longer present ', status=status.HTTP_404_NOT_FOUND)
+
+            custom_user = User.objects.get(username=request.user.username)
+            mapped_user = AccountCustom.objects.get(id=fetched_user_id.user_id)
+            if str(custom_user) != str(mapped_user.username):
+                return JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN,
+                                    safe=False)
+            #fetched_user_id = DocCustom.objects.get(doc_id=id)
+            #mapped_user = AccountCustom.objects.get(id=fetched_user_id.user_id)
+            pic_user = DocCustom.objects.get(doc_id=fetched_user_id.doc_id)
+            try:
+                response = client.delete_object(
+                    Bucket='jay11awsbucket',
+                    Key=str(mapped_user.id) + '/' + pic_user.name
+                )
+                print(response)
+                pic_user.delete()
+                return HttpResponse(status=204)
+            except BaseException as err:
+                return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
+
 
 
 
