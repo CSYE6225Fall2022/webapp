@@ -18,6 +18,10 @@ variable "aws_secret_key" {
   type    = string
   default = ""
 }
+variable "subnet_id" {
+  type    = string
+  default = ""
+}
 
 
 source "amazon-ebs" "my_ubuntu_ami" {
@@ -32,6 +36,10 @@ source "amazon-ebs" "my_ubuntu_ami" {
   profile         = "dev"
 
   ssh_username = "ubuntu"
+  ssh_timeout  = "10m"
+  subnet_id    = "${var.subnet_id}"
+  associate_public_ip_address= true
+  ssh_interface = "public_ip"
   launch_block_device_mappings {
     delete_on_termination = true
     device_name           = "/dev/sda1"
