@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . views import Health
 urlpatterns = [
-    path('',views.health,name='health'),
+    path('',Health.as_view(),name='health'),
 ]
