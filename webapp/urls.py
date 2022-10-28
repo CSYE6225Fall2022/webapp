@@ -20,8 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthz/', include('server.urls')),
     path('v1/', include('accounts.urls')),
-    # path(, include('accounts.urls')),
-    #path('',include('accounts.urls')),
-    #path('',include('accounts.urls')),
 
 ]
