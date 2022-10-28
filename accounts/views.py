@@ -314,7 +314,7 @@ class Myendpointview(views.APIView):
             pic_user = DocCustom.objects.get(doc_id=fetched_user_id.doc_id)
             try:
                 response = client.delete_object(
-                    Bucket='jay11awsbucket',
+                    Bucket=os.environ['awss3bucket'],
                     Key=str(mapped_user.id) + '/' + pic_user.name
                 )
                 print(response)

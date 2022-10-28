@@ -7,7 +7,8 @@ WantedBy=multi-user.target
 
 [Service]
 # What process to start
-ExecStart=uwsgi --http :8000 --module webapp.wsgi
+User=ubuntu
+ExecStart=python3 manage.py runserver 0.0.0.0:8000
 # What user chown to
 # Working directory
 WorkingDirectory=/home/ubuntu/
