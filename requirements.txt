@@ -38,6 +38,5 @@ urllib3==1.26.12
 validators==0.20.0
 django_statsd==2.5.2
 python-statsd==2.1.0
-statsd-client==1.0.7
 statsd==4.0.0
 django-statsd-mozilla==0.4.0
