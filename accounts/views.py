@@ -1,6 +1,6 @@
 import json
 import os
-import django_statsd
+#import django_statsd
 import logging
 import bcrypt
 # Create your views here.
@@ -9,6 +9,7 @@ import base64
 from django.contrib.auth.models import User
 from rest_framework.decorators import parser_classes
 from django.shortcuts import get_object_or_404
+from django_statsd.clients import statsd
 
 from django.http import JsonResponse, HttpResponse, QueryDict
 from django.utils import timezone
@@ -51,9 +52,9 @@ client = boto3.client(
 def index(request):
     if request.method == 'POST':
         try:
-            django_statsd.incr('api.userCreate')
-            django_statsd.start('api.userCreate.time.taken')
-
+            statsd.incr('api.userCreate')
+            t= statsd.timer('api.userCreate.time.taken')
+            t.start()
             json_data = json.loads(request.body)
             if "username" not in json_data:
                 raise BaseException("username should be present")
@@ -73,7 +74,7 @@ def index(request):
             )
             usercustom.save()
             logger.info("POST: Create User")
-            django_statsd.stop('api.userCreate.time.taken')
+            t.stop()
 
             return JsonResponse(
                 {
@@ -99,8 +100,9 @@ def index(request):
 def self(request,id):
     if request.method == 'GET':
         try:
-            django_statsd.incr('api.getUser')
-            django_statsd.start('api.getUser.time.taken')
+            statsd.incr('api.getUser')
+            t= statsd.timer('api.getUser.time.taken')
+            t.start()
 
             custom_user = User.objects.get(username=request.user.username)
             fetched_user = AccountCustom.objects.get(id=id)
@@ -111,7 +113,7 @@ def self(request,id):
             #print(custom_user.password)
             #if fetched_user.password != custom_user.password:
             #    return JsonResponse("Unauthorized", status=status.HTTP_401_UNAUTHORIZED, safe=False)
-            django_statsd.stop('api.getUser.time.taken')
+            t.stop()
             return Response({"id": fetched_user.id,
                              "first_name": fetched_user.first_name,
                              "last_name": fetched_user.last_name,
@@ -124,9 +126,9 @@ def self(request,id):
     else:
 
         # tutorial_serializer = UserCustomSerializer(request.body)
+        statsd.incr('api.updateUser')
+        t = statsd.start('api.updateUser.time.taken').start()
         try:
-            django_statsd.incr('api.updateUser')
-            django_statsd.start('api.updateUser.time.taken')
             custom_user = User.objects.get(username=request.user.username)
             fetched_user = AccountCustom.objects.get(id=id)
             if str(custom_user) != str(fetched_user.username):
@@ -154,11 +156,13 @@ def self(request,id):
             fetched_user.password = hashed
             fetched_user.save()
             logger.info("PUT: update USER")
-            django_statsd.stop('api.updateUser.time.taken')
+            t.stop()
+            #statsd.stop('api.updateUser.time.taken')
             return HttpResponse(status=204)
         except BaseException as err:
             logger.error("ERROR: Something Happened: PUT : Update User")
-            django_statsd.stop('api.updateUser.time.taken')
+            t.stop()
+            #statsd.stop('api.updateUser.time.taken')
             return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
 
 
@@ -177,8 +181,8 @@ class FileUploadView(views.APIView):
 
     def post(self,request,format=None):
         if request.method == 'POST':
-            django_statsd.incr('api.uploadDoc')
-            django_statsd.start('api.uploadDoc.time.taken')
+            statsd.incr('api.uploadDoc')
+            t= statsd.timer('api.uploadDoc.time.taken').start()
             fetched_user = AccountCustom.objects.get(username=request.user.username)
             print(request.data)
             file = request.data.get('file')
@@ -226,7 +230,8 @@ class FileUploadView(views.APIView):
                 #     pic_user.delete()
                 piccustom.save()
                 # print(response)
-                django_statsd.stop('api.uploadDoc.time.taken')
+                t.stop()
+                #statsd.stop('api.uploadDoc.time.taken')
                 logger.info("POST: Uploaded Document")
                 return JsonResponse(
                     {
@@ -239,12 +244,13 @@ class FileUploadView(views.APIView):
 
             except BaseException as err:
                 logger.error("ERROR: Something Happened: POST : upload")
-                django_statsd.stop('api.uploadDoc.time.taken')
+                t.stop()
+                #statsd.stop('api.uploadDoc.time.taken')
                 return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
     def get(self,request,format=None):
         if request.method == 'GET':
-            django_statsd.incr('api.getDoc')
-            django_statsd.start('api.getDoc.time.taken')
+            statsd.incr('api.getDoc')
+            t= statsd.timer('api.getDoc.time.taken').start()
             fetched_user = User.objects.get(username=request.user.username)
             mapped_user = AccountCustom.objects.get(username=str(fetched_user))
 
@@ -260,12 +266,14 @@ class FileUploadView(views.APIView):
                 #                 "date_created": pic_user.date_created,
                 #                 "user_id": pic_user.user_id},
                 #                 status=HTTP_200_OK)
-                django_statsd.stop('api.getDoc.time.taken')
+                #statsd.stop('api.getDoc.time.taken')
+                t.stop()
                 logger.info("GET: get document")
                 return Response(all_docs,status=HTTP_200_OK)
             except BaseException as err:
                 logger.error("ERROR: Something Happened: GET : get document")
-                django_statsd.stop('api.getDoc.time.taken')
+                t.stop()
+                #statsd.stop('api.getDoc.time.taken')
                 return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
 
 class Myendpointview(views.APIView):
@@ -273,8 +281,8 @@ class Myendpointview(views.APIView):
     #permission_classes = [IsAuthenticated]
     def get(self,request,*args,**kwargs):
         if request.method == 'GET':
-            django_statsd.incr('api.getThatDoc')
-            django_statsd.start('api.getThatDoc.time.taken')
+            statsd.incr('api.getThatDoc')
+            t= statsd.timer('api.getThatDoc.time.taken').start()
 
             #return Response(status=HTTP_200_OK)
             #print(docu_id)
@@ -301,7 +309,8 @@ class Myendpointview(views.APIView):
             print(fetched_user_id)
             try:
                 pic_user = DocCustom.objects.get(doc_id=fetched_user_id.doc_id)
-                django_statsd.stop('api.getThatDoc.time.taken')
+                t.stop()
+                #statsd.stop('api.getThatDoc.time.taken')
                 logger.info("GET: get that document")
                 return Response({"id": pic_user.doc_id,
                                  "file_name": pic_user.name,
@@ -311,13 +320,14 @@ class Myendpointview(views.APIView):
                                 status=HTTP_200_OK)
             except BaseException as err:
                 logger.error("ERROR: Something Happened: GET : get profile pic")
-                django_statsd.stop('api.getThatDoc.time.taken')
+                t.stop()
+                #statsd.stop('api.getThatDoc.time.taken')
                 return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
 
     def delete(self,request,*args,**kwargs):
         if request.method == "DELETE":
-            django_statsd.incr('api.deleteDoc')
-            django_statsd.start('api.deleteDoc.time.taken')
+            statsd.incr('api.deleteDoc')
+            t= statsd.timer('api.deleteDoc.time.taken').start()
             #fetched_user = AccountCustom.objects.get(username=request.user.username)
             id = kwargs.get('id')
             try:
@@ -340,13 +350,15 @@ class Myendpointview(views.APIView):
                 )
                 print(response)
                 logger.info("DELETE: delete profile pic")
-                django_statsd.stop('api.deleteDoc.time.taken')
+                t.stop()
+                #statsd.stop('api.deleteDoc.time.taken')
                 pic_user.delete()
 
                 return HttpResponse(status=204)
             except BaseException as err:
                 logger.info("DELETE: delete document")
-                django_statsd.stop('api.deleteDoc.time.taken')
+                t.stop()
+                #statsd.stop('api.deleteDoc.time.taken')
                 return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
 
 
