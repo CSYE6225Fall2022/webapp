@@ -1,6 +1,5 @@
 import json
 import os
-#import django_statsd
 import logging
 import bcrypt
 # Create your views here.
