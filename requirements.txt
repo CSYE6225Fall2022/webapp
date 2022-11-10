@@ -36,3 +36,6 @@ six==1.16.0
 sqlparse==0.4.2
 urllib3==1.26.12
 validators==0.20.0
+django_statsd==2.5.2
+python-statsd==2.1.0
+statsd-client==1.0.7

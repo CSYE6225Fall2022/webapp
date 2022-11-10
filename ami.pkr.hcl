@@ -57,6 +57,12 @@ build {
 
   }
 
+  provisioner "file" {
+    source = "cloudwatch-config.json"
+    destination = "cloudwatch-config.json"
+
+  }
+
   provisioner "shell" {
     environment_vars = [
       "DEBIAN_FRONTEND=noninteractive",
@@ -64,6 +70,7 @@ build {
     ]
     inline = [
       "sleep 10",
+      "sudo mv cloudwatch-config.json /opt/",
       "echo '############################################## inline script started##########################################################'",
       "sudo apt-get -y update",
       "echo '############################################## upgrade completed ##########################################################'",
@@ -116,7 +123,9 @@ build {
       #"sudo systemctl start webapp.service",
       "echo deployment complete",
       #      "sudo systemctl daemon-reload",
-      "sudo lsof -PiTCP -sTCP:LISTEN"
+      "sudo lsof -PiTCP -sTCP:LISTEN",
+      "sudo wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -y",
+      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/cloudwatch-config.json -s"
 
     ]
   }
