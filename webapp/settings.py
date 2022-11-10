@@ -59,6 +59,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
+    'django_statsd.middleware.StatsdMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -167,16 +168,16 @@ logging.config.dictConfig({
         },
     },
     'handlers': {
-        'default': {
+        'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename' : '/var/log/csye6225.log',
+            'filename' : 'csye6225.log',
             'formatter': 'standard'
         },
     },
     'loggers': {
         '': {
-            'handlers': ['default'],
+            'handlers': ['file'],
             'propagate': True,
         }
     }

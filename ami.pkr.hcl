@@ -57,6 +57,12 @@ build {
 
   }
 
+  provisioner "file" {
+    source = "cloudwatch-config.json"
+    destination = "cloudwatch-config.json"
+
+  }
+
   provisioner "shell" {
     environment_vars = [
       "DEBIAN_FRONTEND=noninteractive",
@@ -64,6 +70,7 @@ build {
     ]
     inline = [
       "sleep 10",
+      "sudo mv cloudwatch-config.json /opt/",
       "echo '############################################## inline script started##########################################################'",
       "sudo apt-get -y update",
       "echo '############################################## upgrade completed ##########################################################'",
