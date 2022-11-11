@@ -171,7 +171,7 @@ logging.config.dictConfig({
         'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename' : 'csye6225.log',
+            'filename' : './csye6225.log',
             'formatter': 'standard'
         },
     },
