@@ -50,9 +50,8 @@ client = boto3.client(
 
 def index(request):
     if request.method == 'POST':
+        t = statsd.timer('api.userCreate.time.taken')
         try:
-            statsd.incr('api.userCreate')
-            t= statsd.timer('api.userCreate.time.taken')
             t.start()
             json_data = json.loads(request.body)
             if "username" not in json_data:
@@ -74,6 +73,7 @@ def index(request):
             usercustom.save()
             logger.info("POST: Create User")
             t.stop()
+            statsd.incr('api.userCreate')
 
             return JsonResponse(
                 {
@@ -98,9 +98,9 @@ def index(request):
 @api_view(["GET", "PUT"])
 def self(request,id):
     if request.method == 'GET':
+        t = statsd.timer('api.getUser.time.taken')
         try:
-            statsd.incr('api.getUser')
-            t= statsd.timer('api.getUser.time.taken')
+
             t.start()
 
             custom_user = User.objects.get(username=request.user.username)
@@ -113,6 +113,7 @@ def self(request,id):
             #if fetched_user.password != custom_user.password:
             #    return JsonResponse("Unauthorized", status=status.HTTP_401_UNAUTHORIZED, safe=False)
             t.stop()
+            statsd.incr('api.getUser')
             return Response({"id": fetched_user.id,
                              "first_name": fetched_user.first_name,
                              "last_name": fetched_user.last_name,
@@ -125,7 +126,7 @@ def self(request,id):
     else:
 
         # tutorial_serializer = UserCustomSerializer(request.body)
-        statsd.incr('api.updateUser')
+
         t = statsd.start('api.updateUser.time.taken').start()
         try:
             custom_user = User.objects.get(username=request.user.username)
@@ -156,6 +157,7 @@ def self(request,id):
             fetched_user.save()
             logger.info("PUT: update USER")
             t.stop()
+            statsd.incr('api.updateUser')
             #statsd.stop('api.updateUser.time.taken')
             return HttpResponse(status=204)
         except BaseException as err:
@@ -180,7 +182,6 @@ class FileUploadView(views.APIView):
 
     def post(self,request,format=None):
         if request.method == 'POST':
-            statsd.incr('api.uploadDoc')
             t= statsd.timer('api.uploadDoc.time.taken').start()
             fetched_user = AccountCustom.objects.get(username=request.user.username)
             print(request.data)
@@ -232,6 +233,7 @@ class FileUploadView(views.APIView):
                 t.stop()
                 #statsd.stop('api.uploadDoc.time.taken')
                 logger.info("POST: Uploaded Document")
+                statsd.incr('api.uploadDoc')
                 return JsonResponse(
                     {
                         "doc_id": piccustom.doc_id,
@@ -248,7 +250,6 @@ class FileUploadView(views.APIView):
                 return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
     def get(self,request,format=None):
         if request.method == 'GET':
-            statsd.incr('api.getDoc')
             t= statsd.timer('api.getDoc.time.taken').start()
             fetched_user = User.objects.get(username=request.user.username)
             mapped_user = AccountCustom.objects.get(username=str(fetched_user))
@@ -268,6 +269,7 @@ class FileUploadView(views.APIView):
                 #statsd.stop('api.getDoc.time.taken')
                 t.stop()
                 logger.info("GET: get document")
+                statsd.incr('api.getDoc')
                 return Response(all_docs,status=HTTP_200_OK)
             except BaseException as err:
                 logger.error("ERROR: Something Happened: GET : get document")
@@ -280,7 +282,6 @@ class Myendpointview(views.APIView):
     #permission_classes = [IsAuthenticated]
     def get(self,request,*args,**kwargs):
         if request.method == 'GET':
-            statsd.incr('api.getThatDoc')
             t= statsd.timer('api.getThatDoc.time.taken').start()
 
             #return Response(status=HTTP_200_OK)
@@ -311,6 +312,7 @@ class Myendpointview(views.APIView):
                 t.stop()
                 #statsd.stop('api.getThatDoc.time.taken')
                 logger.info("GET: get that document")
+                statsd.incr('api.getThatDoc')
                 return Response({"id": pic_user.doc_id,
                                  "file_name": pic_user.name,
                                  "url": pic_user.s3_bucket_path,
@@ -325,7 +327,6 @@ class Myendpointview(views.APIView):
 
     def delete(self,request,*args,**kwargs):
         if request.method == "DELETE":
-            statsd.incr('api.deleteDoc')
             t= statsd.timer('api.deleteDoc.time.taken').start()
             #fetched_user = AccountCustom.objects.get(username=request.user.username)
             id = kwargs.get('id')
@@ -348,11 +349,12 @@ class Myendpointview(views.APIView):
                     Key=str(mapped_user.id) + '/' + pic_user.name
                 )
                 print(response)
-                logger.info("DELETE: delete profile pic")
-                t.stop()
+
                 #statsd.stop('api.deleteDoc.time.taken')
                 pic_user.delete()
-
+                logger.info("DELETE: delete profile pic")
+                t.stop()
+                statsd.incr('api.deleteDoc')
                 return HttpResponse(status=204)
             except BaseException as err:
                 logger.info("DELETE: delete document")
