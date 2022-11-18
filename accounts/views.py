@@ -9,6 +9,10 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import parser_classes
 from django.shortcuts import get_object_or_404
 from django_statsd.clients import statsd
+import time
+import math
+import random
+#from boto.dynamodb2.table import Table
 
 from django.http import JsonResponse, HttpResponse, QueryDict
 from django.utils import timezone
@@ -50,15 +54,18 @@ client = boto3.client(
 
 def index(request):
     if request.method == 'POST':
-        t = statsd.timer('api.userCreate.time.taken')
+
         try:
+            statsd.incr('api.userCreate')
+            t = statsd.timer('api.userCreate.time.taken')
             t.start()
             json_data = json.loads(request.body)
             if "username" not in json_data:
                 raise BaseException("username should be present")
-            valid = json_data['username']
-            # if not valid:
-            #    raise BaseException("username should be a valid email")
+            valid = validators.email(json_data['username'])
+            if not valid:
+                raise BaseException("username should be a valid email")
+
             user = User.objects.create_user(json_data['username'], json_data['username'], json_data['password'])
             user.first_name = json_data['first_name']
             user.last_name = json_data['last_name']
@@ -71,6 +78,93 @@ def index(request):
                 password=hashed,
             )
             usercustom.save()
+            dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+            #table = dynamodb.Table('Account')
+
+            sns = boto3.client('sns', region_name='us-east-1')
+            digits = [i for i in range(0, 10)]
+            random_str = ""
+            for i in range(6):
+                index = math.floor(random.random() * 10)
+                random_str += str(digits[index])
+            print(random_str)
+            seconds = 300
+            ttl = int(time.time()) + seconds
+            #existing_tables = dynamodb.list_tables()['TableNames']
+
+            #print(dynamodb)
+            #response = dynamodb.describe_table(TableName='Account')
+            # if not response:
+            existing_tables = dynamodb.get_available_subresources()
+            print(existing_tables)
+            dbclient = boto3.client('dynamodb', region_name='us-east-1')
+            response = dbclient.list_tables()#dbclient.describe_table(TableName='Account') or 1
+            print(response)
+            #tables = list(dynamodb.Tables.all())
+            #if dynamodb.Table('Account'):
+            #    print("yayyy")
+            if 'Account1' not in response['TableNames'] :
+                 table = dynamodb.create_table(
+                    TableName='Account1',
+                    KeySchema=[
+                        {
+                            'AttributeName': 'email',
+                            'KeyType': 'HASH'  # Partition key
+                        },
+                        # {
+                        #     'AttributeName': 'token',
+                        #     'KeyType': 'RANGE'  # Sort key
+                        # },
+
+                    ],
+                    AttributeDefinitions=[
+                        {
+                            'AttributeName': 'email',
+                        # AttributeType defines the data type. 'S' is string type and 'N' is number type
+                            'AttributeType': 'S'
+                        },
+                        # {
+                        #     'AttributeName': 'token',
+                        #     'AttributeType': 'N'
+                        # },
+                    ],
+                    ProvisionedThroughput={
+                    # ReadCapacityUnits set to 10 strongly consistent reads per second
+                        'ReadCapacityUnits': 1,
+                        'WriteCapacityUnits': 1  # WriteCapacityUnits set to 10 writes per second
+                    }
+
+
+                    )
+                 table.wait_until_exists()
+            #time.sleep(2)
+            #return table
+            #response = dynamodb.describe_table(TableName='Account')
+            #print(response)
+            #table = dynamodb.Table('Account')
+            user_cred_email = str(json_data['username'])
+            #existing_tables = dynamodb.get_available_subresources()
+            #print(table.table_status)
+            #print(existing_tables)
+            #table = [dynamodb.tables.all()]
+            #print(table)
+            client = boto3.resource('dynamodb')
+            if 1==1:
+                    response1 = dbclient.put_item(TableName = 'Account1',
+                    Item={
+                        'email': {'S': user_cred_email},
+                        'token':{'N': random_str},
+                        'TimeToLive': {'N':str(ttl)},
+                    })
+                    sns.publish(
+                    TopicArn='arn:aws:sns:us-east-1:' + '094363902806' + ':webservice-sns',
+                    MessageStructure='json',
+                    Message=json.dumps({'default': json.dumps({
+                        'Email': json_data['username'],
+                        'token': random_str
+                    })}),
+                    )
+
             logger.info("POST: Create User")
             t.stop()
             statsd.incr('api.userCreate')
@@ -98,6 +192,7 @@ def index(request):
 @api_view(["GET", "PUT"])
 def self(request,id):
     if request.method == 'GET':
+        statsd.incr('api.getUser')
         t = statsd.timer('api.getUser.time.taken')
         try:
 
@@ -113,7 +208,6 @@ def self(request,id):
             #if fetched_user.password != custom_user.password:
             #    return JsonResponse("Unauthorized", status=status.HTTP_401_UNAUTHORIZED, safe=False)
             t.stop()
-            statsd.incr('api.getUser')
             return Response({"id": fetched_user.id,
                              "first_name": fetched_user.first_name,
                              "last_name": fetched_user.last_name,
@@ -126,7 +220,7 @@ def self(request,id):
     else:
 
         # tutorial_serializer = UserCustomSerializer(request.body)
-
+        statsd.incr('api.updateUser')
         t = statsd.start('api.updateUser.time.taken').start()
         try:
             custom_user = User.objects.get(username=request.user.username)
@@ -157,7 +251,6 @@ def self(request,id):
             fetched_user.save()
             logger.info("PUT: update USER")
             t.stop()
-            statsd.incr('api.updateUser')
             #statsd.stop('api.updateUser.time.taken')
             return HttpResponse(status=204)
         except BaseException as err:
@@ -182,6 +275,7 @@ class FileUploadView(views.APIView):
 
     def post(self,request,format=None):
         if request.method == 'POST':
+            statsd.incr('api.uploadDoc')
             t= statsd.timer('api.uploadDoc.time.taken').start()
             fetched_user = AccountCustom.objects.get(username=request.user.username)
             print(request.data)
@@ -233,7 +327,7 @@ class FileUploadView(views.APIView):
                 t.stop()
                 #statsd.stop('api.uploadDoc.time.taken')
                 logger.info("POST: Uploaded Document")
-                statsd.incr('api.uploadDoc')
+
                 return JsonResponse(
                     {
                         "doc_id": piccustom.doc_id,
@@ -250,6 +344,7 @@ class FileUploadView(views.APIView):
                 return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
     def get(self,request,format=None):
         if request.method == 'GET':
+            statsd.incr('api.getDoc')
             t= statsd.timer('api.getDoc.time.taken').start()
             fetched_user = User.objects.get(username=request.user.username)
             mapped_user = AccountCustom.objects.get(username=str(fetched_user))
@@ -269,7 +364,7 @@ class FileUploadView(views.APIView):
                 #statsd.stop('api.getDoc.time.taken')
                 t.stop()
                 logger.info("GET: get document")
-                statsd.incr('api.getDoc')
+
                 return Response(all_docs,status=HTTP_200_OK)
             except BaseException as err:
                 logger.error("ERROR: Something Happened: GET : get document")
@@ -282,6 +377,7 @@ class Myendpointview(views.APIView):
     #permission_classes = [IsAuthenticated]
     def get(self,request,*args,**kwargs):
         if request.method == 'GET':
+            statsd.incr('api.getThatDoc')
             t= statsd.timer('api.getThatDoc.time.taken').start()
 
             #return Response(status=HTTP_200_OK)
@@ -312,7 +408,7 @@ class Myendpointview(views.APIView):
                 t.stop()
                 #statsd.stop('api.getThatDoc.time.taken')
                 logger.info("GET: get that document")
-                statsd.incr('api.getThatDoc')
+
                 return Response({"id": pic_user.doc_id,
                                  "file_name": pic_user.name,
                                  "url": pic_user.s3_bucket_path,
@@ -327,6 +423,7 @@ class Myendpointview(views.APIView):
 
     def delete(self,request,*args,**kwargs):
         if request.method == "DELETE":
+            statsd.incr('api.deleteDoc')
             t= statsd.timer('api.deleteDoc.time.taken').start()
             #fetched_user = AccountCustom.objects.get(username=request.user.username)
             id = kwargs.get('id')
@@ -354,13 +451,54 @@ class Myendpointview(views.APIView):
                 pic_user.delete()
                 logger.info("DELETE: delete profile pic")
                 t.stop()
-                statsd.incr('api.deleteDoc')
+
                 return HttpResponse(status=204)
             except BaseException as err:
                 logger.info("DELETE: delete document")
                 t.stop()
                 #statsd.stop('api.deleteDoc.time.taken')
                 return JsonResponse(str(err), status=status.HTTP_404_NOT_FOUND, safe=False)
+
+
+class Myemailverify(views.APIView):
+    @csrf_exempt
+    def get(self,request,*args,**kwargs):
+        if request.GET['email'] and request.GET['token']:
+            dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+            table = dynamodb.Table('Account1')
+            print(request.GET['token'])
+            print(request.GET['email'])
+            logger.info(request)
+            logger.info(request.GET['token'])
+            logger.info(request.GET['email'])
+            response = table.get_item(
+                Key={
+                    'email': str(request.GET['email'])
+                    #'token': {'S': request.GET['token']},
+                    #'TimeToLive': {'N': ttl},
+                })
+
+            print(response)
+            if 'Item' not in response:
+                raise BaseException("email not valid for verification")
+            #print(response['Item']['TimeToLive'].type())
+            print(int(response['Item']['TimeToLive']))
+
+            if int(response['Item']['token']) == int(request.GET['token']) and int(response['Item']['TimeToLive']) > int(time.time()):
+                fetched_user = User.objects.get(username=request.GET['email'])
+                custom_user = AccountCustom.objects.get(username=str(fetched_user))
+                #print(custom_user)
+                custom_user.verified = True
+                print(custom_user.verified)
+                custom_user.save()
+                #print(fetched_user.verified)
+                #custom = User.objects.get(verified= True)
+                #print(custom)
+                return HttpResponse(status=200)
+            return JsonResponse("Token Expired", status=status.HTTP_400_BAD_REQUEST, safe=False)
+        else:
+            return JsonResponse("email and token should be present", status=status.HTTP_400_BAD_REQUEST, safe=False)
+
 
 
 
