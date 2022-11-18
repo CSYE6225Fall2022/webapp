@@ -200,8 +200,8 @@ def self(request,id):
 
             custom_user = User.objects.get(username=request.user.username)
             fetched_user = AccountCustom.objects.get(id=id)
-            if str(custom_user) != str(fetched_user.username):
-                return  JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN, safe=False)
+            #if str(custom_user) != str(fetched_user.username):
+            #    return  JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN, safe=False)
             #print(custom_user)
             #print(fetched_user.username)
             #print(custom_user.password)
@@ -227,8 +227,8 @@ def self(request,id):
         try:
             custom_user = User.objects.get(username=request.user.username)
             fetched_user = AccountCustom.objects.get(id=id)
-            if str(custom_user) != str(fetched_user.username):
-                return  JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN, safe=False)
+            #if str(custom_user) != str(fetched_user.username):
+            #    return  JsonResponse("Sorry you cannot access others information", status=status.HTTP_403_FORBIDDEN, safe=False)
             #if not fetched_user.verified:
             #    return JsonResponse("Unauthorized", status=status.HTTP_401_UNAUTHORIZED, safe=False)
             auth_user = User.objects.get(username=request.user.username)
