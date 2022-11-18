@@ -103,18 +103,18 @@ def index(request):
             #tables = list(dynamodb.Tables.all())
             #if dynamodb.Table('Account'):
             #    print("yayyy")
-            if 'Account' not in response['TableNames'] :
+            if 'Account1' not in response['TableNames'] :
                  table = dynamodb.create_table(
-                    TableName='Account',
+                    TableName='Account1',
                     KeySchema=[
                         {
                             'AttributeName': 'email',
                             'KeyType': 'HASH'  # Partition key
                         },
-                        {
-                            'AttributeName': 'token',
-                            'KeyType': 'RANGE'  # Sort key
-                        },
+                        # {
+                        #     'AttributeName': 'token',
+                        #     'KeyType': 'RANGE'  # Sort key
+                        # },
 
                     ],
                     AttributeDefinitions=[
@@ -123,16 +123,17 @@ def index(request):
                         # AttributeType defines the data type. 'S' is string type and 'N' is number type
                             'AttributeType': 'S'
                         },
-                        {
-                            'AttributeName': 'token',
-                            'AttributeType': 'N'
-                        },
+                        # {
+                        #     'AttributeName': 'token',
+                        #     'AttributeType': 'N'
+                        # },
                     ],
                     ProvisionedThroughput={
                     # ReadCapacityUnits set to 10 strongly consistent reads per second
-                        'ReadCapacityUnits': 10,
-                        'WriteCapacityUnits': 10  # WriteCapacityUnits set to 10 writes per second
+                        'ReadCapacityUnits': 1,
+                        'WriteCapacityUnits': 1  # WriteCapacityUnits set to 10 writes per second
                     }
+
 
                     )
                  table.wait_until_exists()
@@ -149,14 +150,14 @@ def index(request):
             #print(table)
             client = boto3.resource('dynamodb')
             if 1==1:
-                    response1 = dbclient.put_item(TableName = 'Account',
+                    response1 = dbclient.put_item(TableName = 'Account1',
                     Item={
                         'email': {'S': user_cred_email},
                         'token':{'N': random_str},
-                        'TimeToLive':{'N': str(ttl)},
+                        'TimeToLive': {'N':str(ttl)},
                     })
                     sns.publish(
-                    TopicArn='arn:aws:sns:us-east-1:' + '094363902806' + ':csye6225-myTopic',
+                    TopicArn='arn:aws:sns:us-east-1:' + '094363902806' + ':webservice-sns',
                     MessageStructure='json',
                     Message=json.dumps({'default': json.dumps({
                         'Email': json_data['username'],
@@ -464,24 +465,35 @@ class Myemailverify(views.APIView):
     def get(self,request,*args,**kwargs):
         if request.GET['email'] and request.GET['token']:
             dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-            table = dynamodb.Table('Account')
+            table = dynamodb.Table('Account1')
+            print(request.GET['token'])
+            print(request.GET['email'])
             logger.info(request)
             logger.info(request.GET['token'])
             logger.info(request.GET['email'])
             response = table.get_item(
                 Key={
-                    'username': request.GET['email'],
-                    'token': request.GET['token']
+                    'email': str(request.GET['email'])
+                    #'token': {'S': request.GET['token']},
+                    #'TimeToLive': {'N': ttl},
                 })
 
             print(response)
             if 'Item' not in response:
                 raise BaseException("email not valid for verification")
-            if response['Item']['token'] == request.GET['token'] and response['Item']['TimeToLive'] > int(time.time()):
+            #print(response['Item']['TimeToLive'].type())
+            print(int(response['Item']['TimeToLive']))
+
+            if int(response['Item']['token']) == int(request.GET['token']) and int(response['Item']['TimeToLive']) > int(time.time()):
                 fetched_user = User.objects.get(username=request.GET['email'])
-                custom_user = AccountCustom.objects.get(id=fetched_user.id)
+                custom_user = AccountCustom.objects.get(username=str(fetched_user))
+                #print(custom_user)
                 custom_user.verified = True
+                print(custom_user.verified)
                 custom_user.save()
+                #print(fetched_user.verified)
+                #custom = User.objects.get(verified= True)
+                #print(custom)
                 return HttpResponse(status=200)
             return JsonResponse("Token Expired", status=status.HTTP_400_BAD_REQUEST, safe=False)
         else:
