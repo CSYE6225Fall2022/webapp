@@ -148,7 +148,7 @@ def index(request):
             #print(existing_tables)
             #table = [dynamodb.tables.all()]
             #print(table)
-            client = boto3.resource('dynamodb')
+            client = boto3.resource('dynamodb', region_name='us-east-1')
             if 1==1:
                     response1 = dbclient.put_item(TableName = 'Account1',
                     Item={
@@ -213,7 +213,9 @@ def self(request,id):
                              "last_name": fetched_user.last_name,
                              "username": fetched_user.username,
                              "account_created": fetched_user.account_created,
-                             "account_updated": fetched_user.account_updated},
+                             "account_updated": fetched_user.account_updated,
+                             "verified": fetched_user.verified
+                             },
                             status=HTTP_200_OK)
         except BaseException as err:
             return JsonResponse(str(err), status=status.HTTP_400_BAD_REQUEST, safe=False)
@@ -285,7 +287,10 @@ class FileUploadView(views.APIView):
             # print(type(f))# open(file,'rb')
             # obj.put('body': File.open(file, 'rb'))
         #return Response(status=204)
+            #if fetched_user.verified ==True:
             try:
+                if fetched_user.verified != True:
+                    return Response('User Not verified',status=status.HTTP_400_BAD_REQUEST)
                 #assert isinstance(file.name, object)
                 response = client.put_object(
                             Bucket=os.environ['awss3bucket'],
@@ -350,7 +355,9 @@ class FileUploadView(views.APIView):
             mapped_user = AccountCustom.objects.get(username=str(fetched_user))
 
             try:
-                print(mapped_user)
+                if mapped_user.verified != True:
+                    return Response('User Not verified',status=status.HTTP_400_BAD_REQUEST)
+                #print(mapped_user)
 
                 all_docs = DocCustom.objects.filter(user_id=mapped_user.id).values()
                 #if all_docs == None:
