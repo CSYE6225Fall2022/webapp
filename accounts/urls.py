@@ -6,7 +6,7 @@ from .views import Myendpointview
 from .views import Myemailverify
 
 urlpatterns = {
-    path('documents/', FileUploadView.as_view(),name='documents'),
+    path('documents', FileUploadView.as_view(),name='documents'),
     path('account/', views.index, name='index'),
     path('account/<uuid:id>/', views.self, name='self'),
     re_path(r'^documents/(?P<id>.*)$',Myendpointview.as_view()),

@@ -280,6 +280,8 @@ class FileUploadView(views.APIView):
             statsd.incr('api.uploadDoc')
             t= statsd.timer('api.uploadDoc.time.taken').start()
             fetched_user = AccountCustom.objects.get(username=request.user.username)
+            if fetched_user.verified != True:
+                return Response('User Not verified', status=status.HTTP_400_BAD_REQUEST)
             print(request.data)
             file = request.data.get('file')
         #print(file)
@@ -289,8 +291,7 @@ class FileUploadView(views.APIView):
         #return Response(status=204)
             #if fetched_user.verified ==True:
             try:
-                if fetched_user.verified != True:
-                    return Response('User Not verified',status=status.HTTP_400_BAD_REQUEST)
+
                 #assert isinstance(file.name, object)
                 response = client.put_object(
                             Bucket=os.environ['awss3bucket'],
