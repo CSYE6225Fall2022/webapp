@@ -8,7 +8,7 @@ WantedBy=multi-user.target
 [Service]
 # What process to start
 User=ubuntu
-ExecStart=/bin/bash -c 'python3 manage.py runserver 0.0.0.0:8000'
+ExecStart=/bin/bash -c 'python3 manage.py runserver 0.0.0.0:8000;'
 # What user chown to
 # Working directory
 WorkingDirectory=/home/ubuntu/
