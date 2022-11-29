@@ -22,7 +22,8 @@
 ##### Would respond with status code 200 
 #### Added workflow, added Git branch protection
 ##### End
-### 
+#### Creating an ssl document 
+#### aws acm import-certificate --certificate fileb://demo_jayanth-adithya_me.crt  --certificate-chain fileb://demo_jayanth-adithya_me.ca-bundle  --private-key fileb://private.key --region us-east-1 --profile Demo
 
 
 
