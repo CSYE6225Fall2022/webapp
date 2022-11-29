@@ -129,6 +129,7 @@ build {
       "sudo dpkg -i -E ./amazon-cloudwatch-agent.deb",
       "sudo cp cloudwatch-config.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json",
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/cloudwatch-config.json -s",
+
     ]
   }
 }
