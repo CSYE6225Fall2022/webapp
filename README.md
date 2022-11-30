@@ -25,7 +25,7 @@
 #### Creating an ssl document 
 #### aws acm import-certificate --certificate fileb://demo_jayanth-adithya_me.crt  --certificate-chain fileb://demo_jayanth-adithya_me.ca-bundle  --private-key fileb://private.key --region us-east-1 --profile Demo
 
-
+#### Jmeter command jmeter -n -t health-ltest.jmx -f -l health-ltest.jtl -e -o health-ltest -Jthreads=1000 -Jloops=1000 -Jhost=demo.jayanth-adithya.me -Jport=443
 
 
 
