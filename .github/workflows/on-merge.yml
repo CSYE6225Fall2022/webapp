@@ -43,12 +43,23 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
         aws-region: ${{env.AWS_REGION}}
 
+          # build artifact
+    - name: Build Artifact
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: build
+        arguments: -var=AWS_ACCESSKEY=${{ secrets.AWS_ACCESS_KEY_DEV }} -var=AWS_SECTRET_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }} -var=GITHUB_REF=${{ github.event.pull_request.number }} -color=false -on-error=abort
+        target: ami.pkr.hcl
+        working_directory: "."
+        env:
+          PACKER_LOG: 1
 
-    - name: Run packer script file
-      run: |
-        ls -ltr
-        pwd
-        env
-        packer validate .
-        packer build ami.pkr.hcl
-      shell: bash
+#    - name: Run packer script file
+#      run: |
+#        ls -ltr
+#        pwd
+#        env
+#        packer validate .
+#        packer build ami.pkr.hcl
+#      shell: bash
+
