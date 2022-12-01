@@ -52,6 +52,75 @@ jobs:
         target: ami.pkr.hcl
         working_directory: "."
 
+
+    # update template configuration
+    - name: Update template configuration
+      run: |
+        ASG=$(aws autoscaling describe-auto-scaling-instances --query 'AutoScalingInstances[?AutoScalingGroupName==`ec2-auto-scaling-group`].InstanceId' --output text)
+        if [ "$ASG" != "" ]
+        then
+         echo Autoscaling group exists
+         AMS_ID=$(aws ec2 describe-images --filters Name=name,Values=csye6225_${{ github.event.pull_request.number }} --query 'Images[0].[ImageId]' --output text)
+         aws ec2 create-launch-template-version --launch-template-name "asg_launch_config" --source-version 1 --launch-template-data ImageId=$AMS_ID
+        else
+         echo Autoscaling does not exist
+        fi
+
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+        AWS_DEFAULT_REGION: 'us-east-1'
+
+    # update autoscaling group
+    - name: update autoscaling group
+      run: |
+        ASG=$(aws autoscaling describe-auto-scaling-instances --query 'AutoScalingInstances[?AutoScalingGroupName==`ec2-auto-scaling-group`].InstanceId' --output text)
+        if [ "$ASG" != "" ]
+        then
+         echo Autoscaling group exists
+         aws autoscaling update-auto-scaling-group --auto-scaling-group-name myvpcec2-auto-scaling-group --launch-template '{"LaunchTemplateName": "asg_launch_config", "Version": "$Latest"}'
+        else
+         echo Autoscaling does not exist
+        fi
+
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+        AWS_DEFAULT_REGION: 'us-east-1'
+
+    # update autoscaling group
+    - name: refresh autoscaling instances
+      run: |
+        ASG=$(aws autoscaling describe-auto-scaling-instances --query 'AutoScalingInstances[?AutoScalingGroupName==`ec2-auto-scaling-group`].InstanceId' --output text)
+        if [ "$ASG" != "" ]
+        then
+         echo Autoscaling group exists
+         REFRESH_INSTANCE_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name myvpcec2-auto-scaling-group --output text) 
+         echo $REFRESH_INSTANCE_ID
+         STATUS=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name ec2-auto-scaling-group --instance-refresh-ids $REFRESH_INSTANCE_ID --query 'InstanceRefreshes[0].Status' --output text)
+         count=1
+         while [ "$STATUS" != "Successful" ]
+          do
+           echo "refresh status - $STATUS"
+           sleep 60
+           count=`expr $count + 1`
+           if [ $count -eq 20 ]
+           then
+            echo "unable to update instance"
+            exit 1
+           fi
+           STATUS=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name ec2-auto-scaling-group --instance-refresh-ids $REFRESH_INSTANCE_ID --query 'InstanceRefreshes[0].Status' --output text)
+          done
+          echo $STATUS
+        else
+         echo Autoscaling does not exist
+        fi
+
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+        AWS_DEFAULT_REGION: 'us-east-1'
+
 #    - name: Run packer script file
 #      run: |
 #        ls -ltr
