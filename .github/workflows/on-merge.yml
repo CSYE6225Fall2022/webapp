@@ -50,13 +50,13 @@ jobs:
         aws-region: us-east-1
 
           # build artifact
-#    - name: Build Artifact
-#      uses: hashicorp/packer-github-actions@master
-#      with:
-#        command: build
-#        arguments: -var=GITHUB_REF=${{ github.event.pull_request.number }} -color=false -on-error=abort
-#        target: ami.pkr.hcl
-#        working_directory: "."
+    - name: Build Artifact
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: build
+        arguments: -var=GITHUB_REF=${{ github.event.pull_request.number }} -color=false -on-error=abort
+        target: ami.pkr.hcl
+        working_directory: "."
 
 
     # update template configuration
