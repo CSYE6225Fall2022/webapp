@@ -50,19 +50,20 @@ jobs:
         aws-region: ${{env.AWS_REGION}}
 
           # build artifact
-    - name: Build Artifact
-      uses: hashicorp/packer-github-actions@master
-      with:
-        command: build
-        arguments: -var=GITHUB_REF=${{ github.event.pull_request.number }} -color=false -on-error=abort
-        target: ami.pkr.hcl
-        working_directory: "."
+#    - name: Build Artifact
+#      uses: hashicorp/packer-github-actions@master
+#      with:
+#        command: build
+#        arguments: -var=GITHUB_REF=${{ github.event.pull_request.number }} -color=false -on-error=abort
+#        target: ami.pkr.hcl
+#        working_directory: "."
 
 
     # update template configuration
     - name: Update template configuration
       run: |
         ASG=$(aws autoscaling describe-auto-scaling-instances --query 'AutoScalingInstances[?AutoScalingGroupName==`ec2-auto-scaling-group`].InstanceId' --output text)
+        echo $ASG
         if [ "$ASG" != "" ]
         then
          echo Autoscaling group exists
