@@ -84,7 +84,7 @@ jobs:
         if [ "$ASG" != "" ]
         then
          echo Autoscaling group exists
-         aws autoscaling update-auto-scaling-group --auto-scaling-group-name myvpcec2-auto-scaling-group --launch-template '{"LaunchTemplateName": "asg_launch_config", "Version": "$Latest"}'
+         aws autoscaling update-auto-scaling-group --auto-scaling-group-name ec2-auto-scaling-group --launch-template '{"LaunchTemplateName": "asg_launch_config", "Version": "$Latest"}'
         else
          echo Autoscaling does not exist
         fi
@@ -101,7 +101,7 @@ jobs:
         if [ "$ASG" != "" ]
         then
          echo Autoscaling group exists
-         REFRESH_INSTANCE_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name myvpcec2-auto-scaling-group --output text) 
+         REFRESH_INSTANCE_ID=$(aws autoscaling start-instance-refresh --auto-scaling-group-name ec2-auto-scaling-group --output text) 
          echo $REFRESH_INSTANCE_ID
          STATUS=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name ec2-auto-scaling-group --instance-refresh-ids $REFRESH_INSTANCE_ID --query 'InstanceRefreshes[0].Status' --output text)
          count=1
