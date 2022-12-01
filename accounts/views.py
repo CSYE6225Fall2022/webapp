@@ -194,6 +194,9 @@ def self(request,id):
     if request.method == 'GET':
         statsd.incr('api.getUser')
         t = statsd.timer('api.getUser.time.taken')
+        fetched_user = AccountCustom.objects.get(username=request.user.username)
+        if fetched_user.verified != True:
+            return Response('User Not verified', status=status.HTTP_400_BAD_REQUEST)
         try:
 
             t.start()
@@ -224,6 +227,9 @@ def self(request,id):
         # tutorial_serializer = UserCustomSerializer(request.body)
         statsd.incr('api.updateUser')
         t = statsd.start('api.updateUser.time.taken').start()
+        fetched_user = AccountCustom.objects.get(username=request.user.username)
+        if fetched_user.verified != True:
+            return Response('User Not verified', status=status.HTTP_400_BAD_REQUEST)
         try:
             custom_user = User.objects.get(username=request.user.username)
             fetched_user = AccountCustom.objects.get(id=id)
