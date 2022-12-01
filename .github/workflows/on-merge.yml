@@ -49,6 +49,20 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
         aws-region: us-east-1
 
+          # validate templates
+    - name: Validate Template
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: validate
+        arguments: -syntax-only
+        target: ami.pkr.hcl
+
+    - name: Packer Init 1
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: init
+        target: ami.pkr.hcl
+
           # build artifact
     - name: Build Artifact
       uses: hashicorp/packer-github-actions@master

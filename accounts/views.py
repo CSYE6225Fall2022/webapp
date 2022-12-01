@@ -88,7 +88,7 @@ def index(request):
                 index = math.floor(random.random() * 10)
                 random_str += str(digits[index])
             print(random_str)
-            seconds = 300
+            seconds = 180
             ttl = int(time.time()) + seconds
             #existing_tables = dynamodb.list_tables()['TableNames']
 
