@@ -5,6 +5,8 @@ env:
 
 on:
   push:
+    types:
+      - closed
     branches: [ main ]
 
 jobs:
@@ -28,6 +30,10 @@ jobs:
 
     - name: Run Tests
       run: |
+        echo $GITHUB_REF
+        echo ${{ github.event.number }}
+        echo ${{ github.event.issue.number }}
+        echo ${{ github.event.pull_request.number }}
         sudo python3 manage.py test
 
     - name: Create Release Folder
