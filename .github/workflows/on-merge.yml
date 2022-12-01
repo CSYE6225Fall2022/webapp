@@ -63,7 +63,7 @@ jobs:
     - name: Update template configuration
       run: |
         ASG=$(aws autoscaling describe-auto-scaling-instances --query 'AutoScalingInstances[?AutoScalingGroupName==`ec2-auto-scaling-group`].InstanceId' --output text)
-        echo $ASG
+        echo "********************$ASG*******************************"
         if [ "$ASG" != "" ]
         then
          echo Autoscaling group exists
