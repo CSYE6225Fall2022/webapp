@@ -48,7 +48,7 @@ jobs:
       uses: hashicorp/packer-github-actions@master
       with:
         command: build
-        arguments: -var=AWS_ACCESSKEY=${{ secrets.AWS_ACCESS_KEY_DEV }} -var=AWS_SECRET_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }} -var=GITHUB_REF=${{ github.event.pull_request.number }} -color=false -on-error=abort
+        arguments: -var=AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY_DEV }} -var=AWS_SECRET_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }} -var=GITHUB_REF=${{ github.event.pull_request.number }} -color=false -on-error=abort
         target: ami.pkr.hcl
         working_directory: "."
 
@@ -60,6 +60,9 @@ jobs:
 #        packer validate .
 #        packer build ami.pkr.hcl
 #      shell: bash
+
+
+
 
 
 
