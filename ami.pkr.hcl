@@ -23,12 +23,16 @@ variable "subnet_id" {
   default = ""
 }
 
+variable "GITHUB_REF" {
+  default = ""
+}
+
 
 source "amazon-ebs" "my_ubuntu_ami" {
   access_key      = "${var.aws_access_key}"
   secret_key      = "${var.aws_secret_key}"
   region          = "${var.aws_region}"
-  ami_name        = "custom-ami_${formatdate("YYYY_MM_DD_hh_mm_ss", timestamp())}"
+  ami_name        = "csye6225_${var.GITHUB_REF}"
   ami_description = "AMI for CSYE 6225"
   instance_type   = "t2.micro"
   source_ami      = "ami-08c40ec9ead489470"
