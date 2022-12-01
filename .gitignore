@@ -211,5 +211,6 @@ ENV/
 
 # mkdocs documentation
 /site
+*.jtl
 
 # End of https://www.gitignore.io/api/macos,linux,django,python,pycharm
